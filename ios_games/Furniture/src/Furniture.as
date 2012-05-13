@@ -52,7 +52,7 @@
 
 		public function Furniture()
 		{
-			// small change again again again a
+			// small change again again again again
 			trace('start furniture game');
 		}
 		
