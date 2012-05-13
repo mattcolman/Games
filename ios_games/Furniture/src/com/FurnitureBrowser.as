@@ -35,17 +35,21 @@
 		private var _selection:Object = null;
 		private var highlightGlow:Array = [new GlowFilter(0xFFCA1A, 1, 6, 6, 8)];
 		private var _scope:*;
+		public var curLoader:Object = new Object;
+		private var loadingQueue:LoaderMax;
 		
-		public function FurnitureBrowser(scope:*) 
+		public function FurnitureBrowser() 
 		{
-			_scope = scope;
+			loadingQueue = new LoaderMax({name:"mainQueue"});
 		}
 		
 		public function get selection():Object { return _selection; }
 		
-		public function initialize(inventory:Array):void
+		public function initialize(scope:*, inventory:Array):void
 		{
 			trace('initialize');
+			_scope = scope;
+			
 			var px:Number = 0;
 			var py:Number = 0;
 			var pageHolder:Sprite = null;
@@ -65,16 +69,16 @@
 					var container:MovieClip = new FurnitureBox();
 					container.x = px;
 					container.y = py;
-					container.data = inventory[i];
 					container.buttonMode = true;
 					container.mouseChildren = false;
+					container.data = inventory[i];
 					//container.addChild(asset);
 					container.addEventListener( MouseEvent.MOUSE_OVER, this.hoverHandler, false, 0, true );
 					container.addEventListener( MouseEvent.MOUSE_OUT, this.hoverHandler, false, 0, true );
 					container.addEventListener( MouseEvent.CLICK, this.clickHandler, false, 0, true );
 					
-					inventory[i].asset = _scope.findImage(asset, container);
 					var imgLoader:ImageLoader = new ImageLoader(asset, {name:asset, container:container, estimatedBytes:20000, autoDispose: false, noCache:false, onProgress:indProgressHandler, onComplete:indCompleteHandler});
+					inventory[i].asset = imgLoader;
 					imgLoader.load();
 					
 					if ( !pageHolder )
@@ -89,7 +93,7 @@
 					}
 					
 					pageHolder.addChild(container);
-					this.furniture.push(inventory[i].asset.content);
+					this.furniture.push(imgLoader.content);
 					
 					
 					if ( this.furniture.length % 18 == 0 )

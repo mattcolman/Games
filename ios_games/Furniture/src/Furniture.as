@@ -220,18 +220,19 @@
 		private function showFurnitureBrowser():void
 		{
 			trace("show furniture");
-			var browser:FurnitureBrowser = new Browser(this);
+			var browser:FurnitureBrowser = new Browser();
 			browser.x = stage.stageWidth/2;
 			browser.y = stage.stageHeight/2;
 			stage.addChild(browser);
 			
 			var items:Array = new Array();
 			for each(var item:Object in contentArray.variables.items) {
-				item.asset = item.name;
+				item.asset = contentArray.images[item.name];
+				trace("yay", item.asset);
 				items.push(item);
 			}
 			//TO DO: use Furniture browser class
-			browser.initialize(items);
+			browser.initialize(this, items);
 			browser.addEventListener('close', handleClose);
 		}
 		
