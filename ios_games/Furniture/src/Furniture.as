@@ -52,7 +52,6 @@
 
 		public function Furniture()
 		{
-			// small change again again agg
 			trace('start furniture game');
 		}
 		
@@ -221,13 +220,13 @@
 		private function showFurnitureBrowser():void
 		{
 			trace("show furniture");
-			var browser:FurnitureBrowser = new Browser();
+			var browser:FurnitureBrowser = new Browser(this);
 			browser.x = stage.stageWidth/2;
 			browser.y = stage.stageHeight/2;
 			stage.addChild(browser);
 			
 			var items:Array = new Array();
-			for each(var item:Object in _jsonData.variables.items) {
+			for each(var item:Object in contentArray.variables.items) {
 				item.asset = item.name;
 				items.push(item);
 			}
