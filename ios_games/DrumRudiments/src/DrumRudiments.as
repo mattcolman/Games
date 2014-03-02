@@ -33,26 +33,14 @@ package
 		public var circles:Array = [];
 		
 		public function DrumRudiments()
-		{
-			super();
-			
-			pattern = Pattern.DOUBLES;
-			addBackground();
+		{			
+			pattern = Pattern.DOUBLES;			
 			addBPMText();
 			addCircles();			
 			stage.addEventListener(MouseEvent.CLICK, _handleClick);
 				
 		}
 		
-		private function addBackground():void {			
-			var bg:Sprite = new Sprite();
-			bg.graphics.beginFill(0xf5f3db);
-			bg.graphics.drawRect(0, 0, STAGE_WIDTH, STAGE_HEIGHT);
-			bg.graphics.endFill();
-			stage.addChild(bg);
-			bg.cacheAsBitmap = true;
-			bg.cacheAsBitmapMatrix = new Matrix();
-		}
 		
 		private function addBPMText():void {
 			bpmText = new TextField();
