@@ -34,10 +34,10 @@ package
 		
 		public function DrumRudiments()
 		{			
-			pattern = Pattern.DOUBLES;			
+			pattern = Pattern.PARADIDDLES;			
 			addBPMText();
 			addCircles();			
-			stage.addEventListener(MouseEvent.CLICK, _handleClick);
+			stage.addEventListener(MouseEvent.MOUSE_DOWN, _handleClick);
 				
 		}
 		
@@ -58,11 +58,9 @@ package
 		private function _handleClick(e:MouseEvent):void {			
 			
 			var target:int;
-			if (e.stageX > STAGE_WIDTH/2) {
-				trace("right");
+			if (e.stageX > STAGE_WIDTH/2) {				
 				target = 1;  				
-			} else {
-				trace("left");
+			} else {				
 				target = 0;								
 			}
 			
@@ -75,7 +73,7 @@ package
 			}
 				
 				
-			if (pattern[currentIndex % 4] != target) {
+			if (pattern[currentIndex % pattern.length] != target) {
 				circles[target].incorrect();
 				finn();
 			} else {

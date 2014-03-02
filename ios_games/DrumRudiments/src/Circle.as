@@ -41,8 +41,7 @@ package
 			return circle;
 		}
 		
-		private function pulse():void {	
-			trace("pulse!");
+		private function pulse():void {				
 			TweenMax.fromTo(pulser, .4, {alpha:1}, {alpha:0});			
 		}
 		
