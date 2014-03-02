@@ -1,9 +1,13 @@
-matt_adhoc.mobileprovision
 ios_games/shape_tip_fb
 ios_games/shape_tip_fb/src/titlescreen2.jpg
-ioscert.p12
-ios_dev_profile.mobileprovision
-ios_distribution.p12
+*.mobileprovision
+*.p12
+*.certSigningRequest
+*.cer
+*.ipa
+*.project
+*.actionScriptProperties
+*.prefs
 /lib
 /Box2D
 /code
@@ -20,3 +24,4 @@ ios_distribution.p12
 /ios_games/Furniture/.settings/org.eclipse.core.resources.prefs
 /ios_games/Furniture/.project
 /ios_games/Furniture/.settings/org.eclipse.core.runtime.prefs
+/ios_games/DrumRudiments/bin-debug
