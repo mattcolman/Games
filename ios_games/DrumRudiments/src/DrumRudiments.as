@@ -3,13 +3,18 @@ package
 	import flash.display.Graphics;
 	import flash.display.Shape;
 	import flash.display.Sprite;
+	import flash.events.Event;
 	import flash.events.MouseEvent;
 	import flash.events.TimerEvent;
+	import flash.events.TouchEvent;
 	import flash.geom.Matrix;
+	import flash.media.Sound;
 	import flash.text.TextField;
 	import flash.text.TextFormat;
+	import flash.ui.Multitouch;
+	import flash.ui.MultitouchInputMode;
 	import flash.utils.Timer;
-	
+		
 	[SWF(width="2048", height="1536", backgroundColor="#f5f3db", frameRate = "30")]
 	
 	public class DrumRudiments extends Sprite
@@ -31,16 +36,30 @@ package
 		public var bpm:int;
 		public var bpmText:TextField;
 		public var circles:Array = [];
+		public var snare1:Sound;
+		public var snare2:Sound;
 		
 		public function DrumRudiments()
 		{			
+			super();
+			
+			Multitouch.inputMode = MultitouchInputMode.TOUCH_POINT;
+			if (Multitouch.supportsTouchEvents) {
+				this.stage.addEventListener(TouchEvent.TOUCH_BEGIN, _handleTouch);
+			} else {
+				this.stage.addEventListener(MouseEvent.MOUSE_DOWN, _handleTouch);
+			}
+			
+			
+			
 			pattern = Pattern.PARADIDDLES;			
 			addBPMText();
-			addCircles();			
-			stage.addEventListener(MouseEvent.MOUSE_DOWN, _handleClick);
-				
+			addCircles();						
+						
+			snare1 = new Snare1();
+			snare2 = new Snare2();						
 		}
-		
+				
 		
 		private function addBPMText():void {
 			bpmText = new TextField();
@@ -55,13 +74,16 @@ package
 			stage.addChild(bpmText);
 		}
 		
-		private function _handleClick(e:MouseEvent):void {			
-			
+		private function _handleTouch(e:*):void {						
 			var target:int;
-			if (e.stageX > STAGE_WIDTH/2) {				
-				target = 1;  				
-			} else {				
-				target = 0;								
+			if (e.stageX > STAGE_WIDTH/2) {
+				// right
+				target = 1;  
+				snare2.play();
+			} else {	
+				// left
+				target = 0;	
+				snare1.play();
 			}
 			
 			if (firstClick) {
@@ -84,7 +106,7 @@ package
 		}
 		
 		private function finn():void {
-			trace("finn");
+			trace("finn");			
 		}
 		
 		private function _startTimer():void {
