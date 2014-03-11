@@ -16,6 +16,7 @@ package
 		}
 		
 		public var pulser:Sprite;
+		public var outerCircle:Sprite;
 		public var currentColor:uint;
 		
 		public function Circle()
@@ -35,14 +36,16 @@ package
 		}
 		
 		private function _newPulser():Sprite {
-			var circle:Sprite = new Sprite();		
-			addChild(circle);
-			circle.alpha = 0;
+			var circle:Sprite = new Sprite();					
+			outerCircle = new Sprite();
+			outerCircle.addChild(circle);
+			outerCircle.alpha = 0;
+			this.addChild(outerCircle);			
 			return circle;
 		}
 		
-		private function pulse():void {				
-			TweenMax.fromTo(pulser, .4, {alpha:1}, {alpha:0});			
+		private function pulse():void {			
+			TweenMax.fromTo(outerCircle, .4, {alpha:1}, {alpha:0});			
 		}
 		
 		public function correct():void {
