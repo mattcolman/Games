@@ -20,15 +20,15 @@ package
 		public var currentColor:uint;
 		
 		public function Circle()
-		{
+		{	
+			this.mouseEnabled = false;
+			this.mouseChildren = false;
 			_addCircle();
-			pulser = _newPulser();
+			pulser = _newPulser();			
 		}
 		
 		private function _addCircle():Sprite {			
-			var circle:Sprite = new Sprite();
-			circle.graphics.lineStyle(1, 0x454445);			
-			circle.graphics.drawCircle(0, 0, RADIUS);									
+			var circle:CircleMc = new CircleMc();											
 			addChild(circle);	
 			circle.cacheAsBitmap = true;
 			circle.cacheAsBitmapMatrix = new Matrix();
