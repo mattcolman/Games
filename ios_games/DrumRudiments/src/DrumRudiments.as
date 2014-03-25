@@ -16,14 +16,16 @@ package
 	import flash.events.TouchEvent;
 	import flash.geom.Matrix;
 	import flash.media.Sound;
+	import flash.media.SoundTransform;
 	import flash.net.SharedObject;
 	import flash.text.TextField;
 	import flash.text.TextFormat;
 	import flash.ui.Multitouch;
 	import flash.ui.MultitouchInputMode;
+	import flash.utils.Dictionary;
 	import flash.utils.Timer;
 		
-	[SWF(width="2048", height="1536", backgroundColor="#f5f3db", frameRate = "30")]
+	[SWF(width="2048", height="1536", backgroundColor="#ffffff", frameRate = "30")]
 	
 	public class DrumRudiments extends Sprite
 	{	
@@ -34,6 +36,7 @@ package
 			[0, 0, 1, 1], // doubles
 			[0, 1, 0, 0, 1, 0, 1, 1] // paradiddles
 		];
+		private static const PatternLengths: Array = [1, 2, 4]		
 		private static const RudimentNames:Array = [
 			"singles",
 			"doubles",
@@ -41,39 +44,71 @@ package
 		]
 		private static const GAME_TIME:int = 60; // 1 minute game
 						
-		public var firstClick:Boolean = true;
-		public var totalCount:int = 0;
-		public var currentIndex:int;
-		public var rudiment:Array;
-		public var seconds:int = 0;
-		public var bpm:int;
-		public var bpmText:TextField;
-		public var circles:Array = [];
-		public var snare1:Sound;
-		public var snare2:Sound;
-		public var layout:Layout;
-		public var rudimentIndex:int;
-		public var highlight:MovieClip;
-		public var _timer:Timer;		
-		public var _tween:TweenMax;
-		public var score_so:SharedObject;
-		public var rudimentName:String;
+		private var firstClick:Boolean = true;
+		private var totalCount:int = 0;
+		private var currentIndex:int;
+		private var rudiment:Array;
+		private var seconds:int = 0;
+		private var bpm:int;
+		private var bpmText:TextField;
+		private var circles:Array = [];
+		private var snare1:Sound;
+		private var snare2:Sound;
+		private var layout:Layout;
+		private var rudimentIndex:int;
+		private var highlight:MovieClip;
+		private var _timer:Timer;		
+		private var _tween:TweenMax;
+		private var game_so:SharedObject;
+		private var rudimentName:String;		
+		private var _soundManager:SoundManager;
+		private var _volume:Number;
+		private var _state:String;
+		private var _patternStrings:Array;
+		private var _findPattern:String;
 		
 		public function DrumRudiments()
 		{			
 			super();
 			
-			score_so = SharedObject.getLocal("high_scores");			
+			game_so = SharedObject.getLocal("game_so");			
 			
+			generatePatternStrings();
 			addLayout();
 			addTimer();			
 			addCircles();
 			setRudiment(0);
 			addButtonListeners();
 			addTouchListener();
-						
-			snare1 = new Snare1();
-			snare2 = new Snare2();						
+			
+			_soundManager = new SoundManager();			
+			_soundManager.play("snare1", 0);
+			_soundManager.play("snare2", 0);	
+			if (game_so.data.volume != undefined) {
+				_setVolume(game_so.data.volume);
+			} else {
+				_setVolume(1);	
+			}			
+			
+			setSearching();
+		}
+		
+		private function generatePatternStrings():void {
+			_patternStrings = [];
+			for (var i:int = 0; i < Rudiments.length; i++) {
+				var arr:Array = Rudiments[i];
+				arr = arr.concat(arr);				
+				_patternStrings.push(arr.join(""));
+			}
+			trace("pattern strings" + _patternStrings);
+			
+		}
+	
+		private function _setVolume(volume:Number):void {
+			_soundManager.setVolume(volume);
+			_volume = volume;
+			layout.muteBtn.gotoAndStop(_volume*2+1);
+			game_so.data.volume = volume;			
 		}
 		
 		private function addTouchListener():void {
@@ -88,7 +123,21 @@ package
 		private function addButtonListeners():void {
 			layout.leftBtn.addEventListener(MouseEvent.CLICK, _handleButtonClick);
 			layout.rightBtn.addEventListener(MouseEvent.CLICK, _handleButtonClick);
+			layout.muteBtn.mouseChildren = false;
+			layout.muteBtn.addEventListener(MouseEvent.MOUSE_DOWN, _handleMouseDown);			
 		}		
+		
+		private function _handleMouseDown(e:MouseEvent):void {					
+			layout.muteBtn.gotoAndStop(_volume*2+2);	
+			stage.addEventListener(MouseEvent.MOUSE_UP, _handleMouseUp);
+		}
+		
+		private function _handleMouseUp(e:MouseEvent):void {
+			stage.removeEventListener(MouseEvent.MOUSE_UP, _handleMouseUp);
+			if (_volume == 0) _volume = 1 else _volume = 0;
+			_setVolume(_volume);
+			layout.muteBtn.gotoAndStop(_volume*2+1);			
+		}
 		
 		private function _handleButtonClick(e:MouseEvent):void {			
 			if (e.target.name == "leftBtn") {				
@@ -98,7 +147,7 @@ package
 			} else if (e.target.name == "backBtn") {
 				resetTimer();
 				setRudiment(rudimentIndex);
-				TweenMax.to(e.target.parent, 1, {x:2048, ease:Strong.easeIn});
+				TweenMax.to(e.target.parent, 1, {x:2800, ease:Strong.easeIn});
 			} else {
 				trace("I don't know this button :(");
 			}
@@ -121,15 +170,11 @@ package
 			
 			layout.rudiments.gotoAndStop(index+1);
 			
-			var l:int = rudiment.length;
-			for (var i:int = 0; i < layout.strokesMc.numChildren; i++) {
-				var child:MovieClip = MovieClip(layout.strokesMc.getChildAt(i));				
-				child.gotoAndStop(rudiment[i%l]*2+1);
-			}
+			setSearching();
 			
 			currentIndex = -1;
 			highlight = null;
-			highlightStroke();
+			//highlightStroke();
 			
 			resetTimer();
 		}
@@ -152,48 +197,91 @@ package
 		}
 				
 		
-		private function _handleTouch(e:*):void {	
-			trace('touch' + e.stageX);
+		private function _handleTouch(e:*):void {				
 			var target:int;
 			if (e.stageX > STAGE_WIDTH/2) {
 				// right
-				target = 1;  
-				snare2.play();
+				target = 1;  			
+				_soundManager.play("snare2");
 			} else {	
 				// left
 				target = 0;	
-				snare1.play();
+				_soundManager.play("snare1");
 			}
 			
 			if (firstClick) {
 				firstClick = false;
-				currentIndex = rudiment.indexOf(target);
 				_timer.start();				
 				_tween.resume();
+			}
+			
+			if (_state == "searching") {
+				_findPattern += target.toString();
+				trace("searching" + _findPattern);
+				if (_findPattern.length == PatternLengths[rudimentIndex]) {
+					var index:int = _patternStrings[rudimentIndex].search(_findPattern);
+					if (index != -1) {
+						trace("found the pattern!");
+						trace("index is" + index + " : find pattern : " + _findPattern);
+						trace("target is" + target);
+						currentIndex = index+_findPattern.length-1;
+						currentIndex = currentIndex%8;
+						trace("what is" + 11%8);
+						setNormal();
+					} else {
+						trace("cannot find pattern");
+						_findPattern = _findPattern.slice(1);
+					}
+					
+				}				
 			} else {
 				if (++currentIndex >= 8) currentIndex = 0
 			}				
 				
-			if (rudiment[currentIndex % rudiment.length] != target) {
+			if (rudiment[currentIndex % rudiment.length] != target || _state == "searching") {
 				circles[target].incorrect();
+				if (_state != "searching") setSearching();
 				// TODO - deduct time
-			} else {
+			} else {				
 				highlightStroke();
 				circles[target].correct();
-				totalCount++;
+				totalCount++;				
 			}
 						
 		}
 		
+		private function setSearching():void {
+			_findPattern = "";
+			_state = "searching";
+			var l:int = rudiment.length;
+			for (var i:int = 0; i < layout.strokesMc.numChildren; i++) {
+				var child:MovieClip = MovieClip(layout.strokesMc.getChildAt(i));				
+				child.gotoAndStop(rudiment[i%l]*2+1);
+			}
+		}
+		
+		private function setNormal():void {
+			_findPattern = "";
+			_state = "normal";
+			highlight = null;
+			var l:int = rudiment.length;
+			for (var i:int = 0; i < layout.strokesMc.numChildren; i++) {
+				var child:MovieClip = MovieClip(layout.strokesMc.getChildAt(i));				
+				child.gotoAndStop(rudiment[i%l]*2+1);
+			}
+		}
+		
 		private function finn():void {
 			trace("finn");		
-			var best:int = score_so.data[rudimentName];
-			if (bpm > best) score_so.data[rudimentName] = best = bpm;			
+			if (game_so.data.highscore == undefined) game_so.data.highscore = {};
+			if (game_so.data.highscore[rudimentName] == undefined) game_so.data.highscore[rudimentName] = 0;
+			var best:int = game_so.data.highscore[rudimentName];
+			if (bpm > best) game_so.data.highscore[rudimentName] = best = bpm;			
 			
 			_timer.reset();			
 			
 			var resultsPage:MovieClip = new ResultsPage();
-			TweenMax.from(resultsPage, 1, {x:2048, ease:Strong.easeOut});
+			TweenMax.from(resultsPage, 1, {x:2800, ease:Strong.easeOut});
 			stage.addChild(resultsPage);
 			
 			resultsPage.mainTxt.text = resultsPage.mainTxt.text.replace("**", rudimentName);			
@@ -217,12 +305,13 @@ package
 			layout.barMc.scaleX = 0;
 			bpmText.text = "0";
 			seconds = 0;
+			totalCount = 0;
 			firstClick = true;
 		}
 	
 		
 		private function _handleTick(e:TimerEvent):void {			
-			seconds++;
+			seconds++;			
 			var percentOfAMinute:Number = seconds/GAME_TIME;
 			var strokesPerBeat:int = 2;
 			bpm = (totalCount/strokesPerBeat)/percentOfAMinute;
