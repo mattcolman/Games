@@ -18,58 +18,56 @@ package
 		public var pulser:Sprite;
 		public var outerCircle:Sprite;
 		public var currentColor:uint;
+		private var _correctCircle:Sprite;
+		private var _incorrectCircle:Sprite;
+		private var _currentCircle:Sprite;
 		
 		public function Circle()
 		{	
 			this.mouseEnabled = false;
 			this.mouseChildren = false;
-			_addCircle();
-			pulser = _newPulser();			
+			_addCircle();			
+			_correctCircle = makeCircle(Color.CORRECT);
+			this.addChild(_correctCircle);
+			_incorrectCircle = makeCircle(Color.INCORRECT);
+			this.addChild(_incorrectCircle);
 		}
 		
 		private function _addCircle():Sprite {			
-			var circle:CircleMc = new CircleMc();											
-			addChild(circle);	
+			var circle:CircleMc = new CircleMc();
 			circle.cacheAsBitmap = true;
 			circle.cacheAsBitmapMatrix = new Matrix();
+			this.addChild(circle);				
 			return circle;
-		}
-		
-		private function _newPulser():Sprite {
-			var circle:Sprite = new Sprite();					
-			outerCircle = new Sprite();
-			outerCircle.addChild(circle);
-			outerCircle.alpha = 0;
-			this.addChild(outerCircle);			
-			return circle;
-		}
+		}		
 		
 		private function pulse():void {			
-			TweenMax.fromTo(outerCircle, .4, {alpha:1}, {alpha:0});			
+			TweenMax.fromTo(_currentCircle, .4, {alpha:1}, {alpha:0});			
 		}
 		
 		public function correct():void {
-			if (currentColor != Color.CORRECT) {
-				changeColor(Color.CORRECT);				
-			}
+			_correctCircle.visible = true;
+			_incorrectCircle.visible = false;
+			_currentCircle = _correctCircle;
 			pulse();
 		}
 		
 		public function incorrect():void {
-			if (currentColor != Color.INCORRECT) {
-				changeColor(Color.INCORRECT);				
-			}
+			_correctCircle.visible = false;
+			_incorrectCircle.visible = true;
+			_currentCircle = _incorrectCircle;
 			pulse();
 		}
 		
-		private function changeColor(color:uint):void {
-			currentColor = color;
-			pulser.graphics.clear();
-			pulser.graphics.beginFill(color);			
-			pulser.graphics.drawCircle(0, 0, RADIUS);
-			pulser.graphics.endFill();				
-			pulser.cacheAsBitmap = true;
-			pulser.cacheAsBitmapMatrix = new Matrix();			
+		private function makeCircle(color:uint):Sprite {
+			var sprite:Sprite = new Sprite()						
+			sprite.graphics.beginFill(color);			
+			sprite.graphics.drawCircle(0, 0, RADIUS);
+			sprite.graphics.endFill();				
+			sprite.cacheAsBitmap = true;
+			sprite.cacheAsBitmapMatrix = new Matrix();
+			sprite.visible = false;
+			return sprite;
 		}
 	}
 }
