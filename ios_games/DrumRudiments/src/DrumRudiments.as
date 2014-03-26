@@ -147,11 +147,16 @@ package
 			} else if (e.target.name == "backBtn") {
 				resetTimer();
 				setRudiment(rudimentIndex);
-				TweenMax.to(e.target.parent, 1, {x:2800, ease:Strong.easeIn});
+				TweenMax.to(e.target.parent, 1, {x:2800, ease:Strong.easeIn, onComplete: _removeResultsPage, onCompleteParams: [e.target.parent]});				
 			} else {
 				trace("I don't know this button :(");
 			}
-		}		
+		}	
+		
+		private function _removeResultsPage(page:MovieClip):void {	
+			page.parent.removeChild(page);
+			
+		}
 		
 		private function nextRudiment(direction:int):void {
 			rudimentIndex += direction;
@@ -225,8 +230,7 @@ package
 						trace("index is" + index + " : find pattern : " + _findPattern);
 						trace("target is" + target);
 						currentIndex = index+_findPattern.length-1;
-						currentIndex = currentIndex%8;
-						trace("what is" + 11%8);
+						currentIndex = currentIndex%8;						
 						setNormal();
 					} else {
 						trace("cannot find pattern");
