@@ -12,7 +12,7 @@ package
 		private static const RADIUS:int = 300;
 		private static const Color:Object = {
 			CORRECT: 0x009394,		
-			INCORRECT: 0xff0000
+			INCORRECT: 0xff0000			
 		}
 		
 		public var pulser:Sprite;

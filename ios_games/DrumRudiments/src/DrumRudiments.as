@@ -20,6 +20,7 @@ package
 	import flash.net.SharedObject;
 	import flash.text.TextField;
 	import flash.text.TextFormat;
+	import flash.text.engine.TabAlignment;
 	import flash.ui.Multitouch;
 	import flash.ui.MultitouchInputMode;
 	import flash.utils.Dictionary;
@@ -42,7 +43,7 @@ package
 			"doubles",
 			"paradiddles"
 		]
-		private static const GAME_TIME:int = 60; // 1 minute game
+		private static const GAME_TIME:int = 30; // 1 minute game
 						
 		private var firstClick:Boolean = true;
 		private var totalCount:int = 0;
@@ -100,7 +101,7 @@ package
 				arr = arr.concat(arr);				
 				_patternStrings.push(arr.join(""));
 			}
-			trace("pattern strings" + _patternStrings);
+			trace("pattern strings" + _patternStrings);			
 			
 		}
 	
@@ -108,7 +109,8 @@ package
 			_soundManager.setVolume(volume);
 			_volume = volume;
 			layout.muteBtn.gotoAndStop(_volume*2+1);
-			game_so.data.volume = volume;			
+			game_so.data.volume = volume;	
+			game_so.flush();
 		}
 		
 		private function addTouchListener():void {
@@ -226,15 +228,17 @@ package
 				if (_findPattern.length == PatternLengths[rudimentIndex]) {
 					var index:int = _patternStrings[rudimentIndex].search(_findPattern);
 					if (index != -1) {
-						trace("found the pattern!");
-						trace("index is" + index + " : find pattern : " + _findPattern);
-						trace("target is" + target);
+						//trace("found the pattern!");
+						//trace("index is" + index + " : find pattern : " + _findPattern);
+						//trace("target is" + target);
 						currentIndex = index+_findPattern.length-1;
 						currentIndex = currentIndex%8;						
 						setNormal();
 					} else {
 						trace("cannot find pattern");
 						_findPattern = _findPattern.slice(1);
+						_handleIncorrect(target)
+						return;
 					}
 					
 				}				
@@ -242,16 +246,30 @@ package
 				if (++currentIndex >= 8) currentIndex = 0
 			}				
 				
-			if (rudiment[currentIndex % rudiment.length] != target || _state == "searching") {
-				circles[target].incorrect();
-				if (_state != "searching") setSearching();
-				// TODO - deduct time
+			if (rudiment[currentIndex % rudiment.length] != target || _state == "searching") {				
+				if (_state != "searching") {
+					_handleIncorrect(target);
+					setSearching();
+				} else {
+					//highlightStroke();
+					_handleCorrect(target);
+				}				
 			} else {				
 				highlightStroke();
-				circles[target].correct();
-				totalCount++;				
+				_handleCorrect(target);		
 			}
 						
+		}
+		
+		private function _handleCorrect(target:int):void {
+			circles[target].correct();
+			totalCount++				
+		}
+		
+		private function _handleIncorrect(target:int):void {
+			circles[target].incorrect();
+			// TODO - deduct time
+			totalCount -= 4;
 		}
 		
 		private function setSearching():void {
@@ -281,7 +299,7 @@ package
 			if (game_so.data.highscore[rudimentName] == undefined) game_so.data.highscore[rudimentName] = 0;
 			var best:int = game_so.data.highscore[rudimentName];
 			if (bpm > best) game_so.data.highscore[rudimentName] = best = bpm;			
-			
+			game_so.flush();
 			_timer.reset();			
 			
 			var resultsPage:MovieClip = new ResultsPage();
@@ -291,7 +309,7 @@ package
 			resultsPage.mainTxt.text = resultsPage.mainTxt.text.replace("**", rudimentName);			
 			resultsPage.bubbleMc.txt.text = bpm;		
 			resultsPage.bestTxt.text = resultsPage.bestTxt.text.replace("**", best);		
-			resultsPage.backBtn.addEventListener(MouseEvent.CLICK, _handleButtonClick);
+			resultsPage.backBtn.addEventListener(MouseEvent.CLICK, _handleButtonClick);			
 		}
 		
 		private function addTimer():void {
@@ -310,7 +328,7 @@ package
 			bpmText.text = "0";
 			seconds = 0;
 			totalCount = 0;
-			firstClick = true;
+			firstClick = true;			
 		}
 	
 		
@@ -318,6 +336,7 @@ package
 			seconds++;			
 			var percentOfAMinute:Number = seconds/GAME_TIME;
 			var strokesPerBeat:int = 2;
+			totalCount = Math.max(0, totalCount);
 			bpm = (totalCount/strokesPerBeat)/percentOfAMinute;
 			bpmText.text = bpm.toString();			
 		}		
