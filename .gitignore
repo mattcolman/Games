@@ -2,9 +2,12 @@ ios_games/shape_tip_fb
 ios_games/shape_tip_fb/src/titlescreen2.jpg
 *.mobileprovision
 *.p12
+*bin-debug
 *.certSigningRequest
 *.cer
 *.ipa
+*.fla
+*.swc
 *.project
 *.actionScriptProperties
 *.prefs
