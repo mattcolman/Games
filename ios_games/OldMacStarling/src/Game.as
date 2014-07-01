@@ -1,21 +1,20 @@
 package 
 {
     import com.greensock.TweenLite;
+    import com.greensock.TweenMax;
+    import com.greensock.easing.Elastic;
     import com.greensock.easing.Quad;
     
-    import flash.media.Sound;
+    import flash.display.Stage;
     import flash.media.SoundChannel;
-    import flash.system.System;
-    import flash.ui.Keyboard;
-    import flash.utils.getDefinitionByName;
     
     import starling.core.Starling;
     import starling.display.Button;
     import starling.display.Image;
     import starling.display.MovieClip;
     import starling.display.Sprite;
+    import starling.display.Stage;
     import starling.events.Event;
-    import starling.events.KeyboardEvent;
     import starling.textures.Texture;
     import starling.utils.AssetManager;
        
@@ -51,14 +50,13 @@ package
             
 			sAssets.loadQueue(function(ratio:Number):void
 			{				
-				
+								
 				// a progress bar should always show the 100% for a while,
-				// so we show the main menu only after a short delay. 
-				
+				// so we show the main menu only after a short delay. 			
 				if (ratio == 1)
 					Starling.juggler.delayCall(function():void
 					{
-						showCow();
+						showButtons();
 					}, 0.15);
 			});            
             
@@ -87,7 +85,29 @@ package
 			//var stepSound:Sound = Game.assets.getSound("wing_flap");
 			//mMovie.setFrameSound(2, stepSound);
 		}
-        
+		
+		private function showButtons():void {
+			var animals:Array = ["chicken", "cow", "pig"]
+			var l:int = animals.length;
+			for (var i:int = 0; i < l; i++) {				
+				var button:Button = new Button(sAssets.getTexture(animals[i]+"_button"));				
+				button.pivotX = button.bounds.width/2;
+				button.pivotY = button.bounds.height/2;
+				button.x = Starling.current.stage.stageWidth/2 + (i-1)*300;
+				button.y = Starling.current.stage.stageHeight/2;
+				button.name = animals[i];
+				addChild(button);
+				TweenMax.from(button, 1, {y:Starling.current.stage.stageHeight+300, delay:i*.2, ease:Elastic.easeOut});				
+			}
+			
+			addEventListener(Event.TRIGGERED, onButtonTriggered)
+		}
+		
+		private function onButtonTriggered(e:Event):void {
+			var button:Button = e.target as Button;
+			trace(button.name);			
+		}
+		
         public static function get assets():AssetManager { return sAssets; }
     }
 }
