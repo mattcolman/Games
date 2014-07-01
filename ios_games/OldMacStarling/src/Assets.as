@@ -7,11 +7,11 @@ package
 		public static const Background:Class;
 		
 		// animations
-		[Embed(source="../media/animations/cow.png")]
-		public static const cow:Class;
+		[Embed(source="../media/animations/anim_cow.png")]
+		public static const anim_cow:Class;
 		
-		[Embed(source="../media/animations/cow.xml", mimeType="application/octet-stream")]
-		public static const cowxml:Class;
+		[Embed(source="../media/animations/anim_cow.xml", mimeType="application/octet-stream")]
+		public static const anim_cowxml:Class;
 		
 		[Embed(source="../media/animations/buttons.png")]
 		public static const buttons:Class;
@@ -23,6 +23,9 @@ package
 		// sounds
 		[Embed(source="../media/audio/old_mac_first_line.mp3")]
 		public static const old_mac_first_line:Class;
+		
+		[Embed(source="../media/audio/old_mac_cows.mp3")]
+		public static const old_mac_cows:Class;
 		
 	}
 }

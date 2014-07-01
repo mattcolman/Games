@@ -1,11 +1,12 @@
 package 
 {
+    import com.greensock.TimelineMax;
     import com.greensock.TweenLite;
     import com.greensock.TweenMax;
     import com.greensock.easing.Elastic;
     import com.greensock.easing.Quad;
+    import com.greensock.easing.Strong;
     
-    import flash.display.Stage;
     import flash.media.SoundChannel;
     
     import starling.core.Starling;
@@ -13,7 +14,6 @@ package
     import starling.display.Image;
     import starling.display.MovieClip;
     import starling.display.Sprite;
-    import starling.display.Stage;
     import starling.events.Event;
     import starling.textures.Texture;
     import starling.utils.AssetManager;
@@ -31,6 +31,9 @@ package
         //private var _container:Sprite;
         
         private static var sAssets:AssetManager;
+        private var allButtons:Array;
+        private var stageWidth:int;
+		private var stageHeight:int;
         
         public function Game()
         {
@@ -40,6 +43,8 @@ package
         public function start(background:Texture, assets:AssetManager):void
         {
             sAssets = assets;
+			stageWidth = Starling.current.stage.stageWidth;
+			stageHeight = Starling.current.stage.stageHeight;
             
             // The background is passed into this method for two reasons:
             // 
@@ -49,16 +54,17 @@ package
             addChild(new Image(background));
             
 			sAssets.loadQueue(function(ratio:Number):void
-			{				
-								
+			{								
 				// a progress bar should always show the 100% for a while,
 				// so we show the main menu only after a short delay. 			
-				if (ratio == 1)
-					Starling.juggler.delayCall(function():void
-					{
+				if (ratio == 1) {				
+					// play a sound and receive the SoundChannel that controls it					
+					var music:SoundChannel = sAssets.playSound("old_mac_first_line");					
+					Starling.juggler.delayCall(function():void{
 						showButtons();
-					}, 0.15);
-			});            
+					}, 10)
+				}
+			});  			
             
         }   
 		
@@ -68,19 +74,21 @@ package
 			// network), during which we display a progress indicator.
 			
 			//var cow:MovieClip = new MovieClip(Assets.getAtlas().getTextures("cow_"), 4);			
-			var frames:Vector.<Texture> = sAssets.getTextures("cow_");
+			var frames:Vector.<Texture> = sAssets.getTextures("anim_cow_");
 			var cow:MovieClip = new MovieClip(frames, 4);
 			addChild(cow);
-			cow.x = 300;
-			cow.y = 300;			
+			cow.x = stageWidth/2;
+			cow.y = stageHeight-100;			
 			Starling.juggler.add(cow);
 			
-			TweenLite.from(cow, 4, {y:0, ease:Quad.easeOut});
-			
-			
-			// play a sound and receive the SoundChannel that controls it						
-			var music:SoundChannel = sAssets.playSound("old_mac_first_line");			
-			
+			cow.pivotY = 340;
+			cow.pivotX = 210;
+			cow.scaleY = 2;
+			var tl:TimelineMax = new TimelineMax();			
+			tl.append(TweenLite.from(cow, .4, {y:-320, ease:Strong.easeIn}))
+			tl.append(TweenLite.to(cow, 1, {scaleY:1, ease:Elastic.easeOut}))
+									
+			var music:SoundChannel = sAssets.playSound("old_mac_cows");
 			// add sounds			
 			//var stepSound:Sound = Game.assets.getSound("wing_flap");
 			//mMovie.setFrameSound(2, stepSound);
@@ -89,23 +97,38 @@ package
 		private function showButtons():void {
 			var animals:Array = ["chicken", "cow", "pig"]
 			var l:int = animals.length;
+			allButtons = [];
 			for (var i:int = 0; i < l; i++) {				
 				var button:Button = new Button(sAssets.getTexture(animals[i]+"_button"));				
-				button.pivotX = button.bounds.width/2;
-				button.pivotY = button.bounds.height/2;
-				button.x = Starling.current.stage.stageWidth/2 + (i-1)*300;
-				button.y = Starling.current.stage.stageHeight/2;
+				button.pivotX = 110;
+				button.pivotY = 110;
+				button.x = stageWidth/2 + (i-1)*300;
+				button.y = stageHeight/2;
 				button.name = animals[i];
 				addChild(button);
-				TweenMax.from(button, 1, {y:Starling.current.stage.stageHeight+300, delay:i*.2, ease:Elastic.easeOut});				
+				TweenMax.from(button, 1, {y:stageHeight+300, delay:i*.2, ease:Elastic.easeOut});
+				allButtons.push(button);
 			}
 			
-			addEventListener(Event.TRIGGERED, onButtonTriggered)
+			addEventListener(starling.events.Event.TRIGGERED, onButtonTriggered)
 		}
 		
-		private function onButtonTriggered(e:Event):void {
+		private function onButtonTriggered(e:starling.events.Event):void {
 			var button:Button = e.target as Button;
-			trace(button.name);			
+			trace(button.name);
+			
+			if (button.name == 'cow') {
+				removeButtons();
+				showCow();
+			}
+		}
+		
+		private function removeButtons():void
+		{
+			for (var i:int; i < allButtons.length; i++) {
+				removeChild(allButtons[i]);
+			}
+			
 		}
 		
         public static function get assets():AssetManager { return sAssets; }
