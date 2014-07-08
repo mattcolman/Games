@@ -4,19 +4,27 @@ package
     import com.greensock.TweenLite;
     import com.greensock.TweenMax;
     import com.greensock.easing.Elastic;
-    import com.greensock.easing.Quad;
     import com.greensock.easing.Strong;
     
     import flash.media.SoundChannel;
     
+    import dragonBones.Armature;
+    import dragonBones.animation.WorldClock;
+    import dragonBones.factorys.StarlingFactory;
+    import dragonBones.objects.SkeletonData;
+    import dragonBones.objects.XMLDataParser;
+    import dragonBones.textures.StarlingTextureAtlas;
+    
     import starling.core.Starling;
     import starling.display.Button;
     import starling.display.Image;
-    import starling.display.MovieClip;
     import starling.display.Sprite;
+    import starling.events.EnterFrameEvent;
     import starling.events.Event;
     import starling.textures.Texture;
     import starling.utils.AssetManager;
+	
+	
        
 
     public class Game extends Sprite
@@ -28,12 +36,19 @@ package
         //private var mLoadingProgress:ProgressBar;
         //private var mMainMenu:MainMenu;
         //private var mCurrentScene:Scene;
-        //private var _container:Sprite;
+        //private var _container:Sprite;		
+		
+		[Embed(source="../media/cow_dbones/texture.xml", mimeType="application/octet-stream")]
+		public static const CowTexture:Class;
+		
+		[Embed(source="../media/cow_dbones/skeleton.xml", mimeType="application/octet-stream")]
+		public static const CowSkeleton:Class;
         
         private static var sAssets:AssetManager;
         private var allButtons:Array;
         private var stageWidth:int;
 		private var stageHeight:int;
+		private var factory:StarlingFactory;
         
         public function Game()
         {
@@ -60,39 +75,48 @@ package
 				if (ratio == 1) {				
 					// play a sound and receive the SoundChannel that controls it					
 					var music:SoundChannel = sAssets.playSound("old_mac_first_line");					
-					Starling.juggler.delayCall(function():void{
+					Starling.juggler.delayCall(function():void {
 						showButtons();
-					}, 10)
+					}, 10);
 				}
 			});  			
             
         }   
 		
 		private function showCow():void {
-			// The AssetManager contains all the raw asset data, but has not created the textures
-			// yet. This takes some time (the assets might be loaded from disk or even via the
-			// network), during which we display a progress indicator.
 			
-			//var cow:MovieClip = new MovieClip(Assets.getAtlas().getTextures("cow_"), 4);			
-			var frames:Vector.<Texture> = sAssets.getTextures("anim_cow_");
-			var cow:MovieClip = new MovieClip(frames, 4);
-			addChild(cow);
+			var music:SoundChannel = sAssets.playSound("old_mac_cows");
+			
+			factory = new StarlingFactory();						
+			
+			var skeletonData:SkeletonData = XMLDataParser.parseSkeletonData(XML(new CowSkeleton()));
+			factory.addSkeletonData(skeletonData);
+			
+			var texture:Texture = sAssets.getTexture("cow_bones");
+			var textureAtlas:StarlingTextureAtlas = new StarlingTextureAtlas(texture, XML(new CowTexture()));
+			factory.addTextureAtlas(textureAtlas);		
+			
+			var armature:Armature = factory.buildArmature("cow_main");			
+			var cow:Sprite = armature.display as Sprite;
 			cow.x = stageWidth/2;
-			cow.y = stageHeight-100;			
-			Starling.juggler.add(cow);
-			
-			cow.pivotY = 340;
-			cow.pivotX = 210;
+			cow.y = stageHeight-100;
+						
 			cow.scaleY = 2;
 			var tl:TimelineMax = new TimelineMax();			
 			tl.append(TweenLite.from(cow, .4, {y:-320, ease:Strong.easeIn}))
 			tl.append(TweenLite.to(cow, 1, {scaleY:1, ease:Elastic.easeOut}))
-									
-			var music:SoundChannel = sAssets.playSound("old_mac_cows");
-			// add sounds			
-			//var stepSound:Sound = Game.assets.getSound("wing_flap");
-			//mMovie.setFrameSound(2, stepSound);
+				
+			addChild(cow);			
+			WorldClock.clock.add(armature);
+			armature.animation.gotoAndPlay("walk");
+			addEventListener(EnterFrameEvent.ENTER_FRAME, onEnterFrameHandler);
 		}
+		
+		private function onEnterFrameHandler(e:EnterFrameEvent):void
+		{
+			WorldClock.clock.advanceTime(-1);
+		}	
+			
 		
 		private function showButtons():void {
 			var animals:Array = ["chicken", "cow", "pig"]

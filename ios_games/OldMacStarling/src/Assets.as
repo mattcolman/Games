@@ -27,5 +27,10 @@ package
 		[Embed(source="../media/audio/old_mac_cows.mp3")]
 		public static const old_mac_cows:Class;
 		
+		// dragon bones
+		[Embed(source="../media/cow_dbones/cow_dbones.png")]
+		public static const cow_bones:Class;
+				
+		
 	}
 }
