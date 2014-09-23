@@ -28,6 +28,9 @@ package
 		private var myStarling:Starling;
 		
 		// Startup image for HD screens
+		[Embed(source="../media/images/loading.png")]
+		private static var LoadingImage:Class;
+		
 		[Embed(source="../media/images/background_4_3.png")]
 		private static var Background:Class;
 		
@@ -82,8 +85,9 @@ package
 			// files will vanish from the application package, and those are picked up by the OS!
 			
 			
-			var backgroundClass:Class = scaleFactor == 1 ? Background : Background;			
-			var background:Bitmap = new backgroundClass();
+			var loadingClass:Class = scaleFactor == 1 ? LoadingImage : LoadingImage;
+			var backgroundClass:Class = scaleFactor == 1 ? Background : Background;
+			var background:Bitmap = new loadingClass();
 			Background = null; // no longer needed!
 			
 			background.x = viewPort.x;

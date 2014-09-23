@@ -6,10 +6,13 @@ package
     import com.greensock.easing.Elastic;
     import com.greensock.easing.Strong;
     
+    import flash.events.Event;
     import flash.media.SoundChannel;
     
     import dragonBones.Armature;
+    import dragonBones.Bone;
     import dragonBones.animation.WorldClock;
+    import dragonBones.events.AnimationEvent;
     import dragonBones.factorys.StarlingFactory;
     import dragonBones.objects.SkeletonData;
     import dragonBones.objects.XMLDataParser;
@@ -43,12 +46,19 @@ package
 		
 		[Embed(source="../media/cow_dbones/skeleton.xml", mimeType="application/octet-stream")]
 		public static const CowSkeleton:Class;
+		
+		[Embed(source="../media/oldmac/texture.xml", mimeType="application/octet-stream")]
+		public static const OldMacTexture:Class;
+		
+		[Embed(source="../media/oldmac/skeleton.xml", mimeType="application/octet-stream")]
+		public static const OldMacSkeleton:Class;
         
         private static var sAssets:AssetManager;
         private var allButtons:Array;
         private var stageWidth:int;
 		private var stageHeight:int;
 		private var factory:StarlingFactory;
+		private var oldmacArmature:Armature;
         
         public function Game()
         {
@@ -74,14 +84,49 @@ package
 				// so we show the main menu only after a short delay. 			
 				if (ratio == 1) {				
 					// play a sound and receive the SoundChannel that controls it					
-					var music:SoundChannel = sAssets.playSound("old_mac_first_line");					
-					Starling.juggler.delayCall(function():void {
-						showButtons();
-					}, 10);
+//					Starling.juggler.delayCall(function():void {
+//						showButtons();
+//					}, 1);
+					showOldMac();
+					//showCow();
 				}
 			});  			
-            
         }   
+		
+		private function showOldMac():void {
+			factory = new StarlingFactory();						
+			
+			var skeletonData:SkeletonData = XMLDataParser.parseSkeletonData(XML(new OldMacSkeleton()));
+			factory.addSkeletonData(skeletonData);
+			
+			var texture:Texture = sAssets.getTexture("oldmac");
+			var textureAtlas:StarlingTextureAtlas = new StarlingTextureAtlas(texture, XML(new OldMacTexture()));
+			factory.addTextureAtlas(textureAtlas);		
+			
+			oldmacArmature = factory.buildArmature("oldmac_main");						
+			oldmacArmature.addEventListener(AnimationEvent.COMPLETE, onComplete);
+			
+			var oldmac:Sprite = oldmacArmature.display as Sprite;
+			oldmac.x = 450;
+			oldmac.y = 500;
+			oldmac.scaleX = oldmac.scaleY = .5
+			
+			addChild(oldmac);			
+			
+			WorldClock.clock.add(oldmacArmature);			
+			oldmacArmature.animation.gotoAndPlay("dance1");			
+			
+			addEventListener(EnterFrameEvent.ENTER_FRAME, onEnterFrameHandler);
+			
+			var music:SoundChannel = sAssets.playSound("old_mac_first_line");		
+		}
+		
+		private function onComplete(e:AnimationEvent):void {
+			trace("COMPLETE");
+			if (e.movementID == "dance1") {
+				showButtons();
+			}
+		}
 		
 		private function showCow():void {
 			
@@ -96,19 +141,34 @@ package
 			var textureAtlas:StarlingTextureAtlas = new StarlingTextureAtlas(texture, XML(new CowTexture()));
 			factory.addTextureAtlas(textureAtlas);		
 			
+			//var eyesArmature:Armature = factory.buildArmature("eyes_blue");
+			//var eyes:Sprite = eyesArmature.display as Sprite;
+			//eyes.x = stageWidth/2;			
+			//eyes.y = 300;			
+			//addChild(eyes);
+			
 			var armature:Armature = factory.buildArmature("cow_main");			
 			var cow:Sprite = armature.display as Sprite;
-			cow.x = stageWidth/2;
+			cow.x = stageWidth/2+300;
 			cow.y = stageHeight-100;
+			cow.scaleX = cow.scaleY = .6
 						
 			cow.scaleY = 2;
 			var tl:TimelineMax = new TimelineMax();			
 			tl.append(TweenLite.from(cow, .4, {y:-320, ease:Strong.easeIn}))
-			tl.append(TweenLite.to(cow, 1, {scaleY:1, ease:Elastic.easeOut}))
+			tl.append(TweenLite.to(cow, 1, {scaleY:.6, ease:Elastic.easeOut}))
 				
-			addChild(cow);			
+			addChild(cow);
+			
+			//var _bone:Bone = armature.getBone("eyes_new"); 
+			//_bone.display.dispose();
+			//_bone.display = eyes;
+			//eyesArmature.animation.gotoAndPlay("blink");
+			
 			WorldClock.clock.add(armature);
-			armature.animation.gotoAndPlay("walk");
+			//WorldClock.clock.add(eyesArmature);
+			armature.animation.gotoAndPlay("walk");			
+			//eyesArmature.animation.gotoAndPlay("blink");
 			addEventListener(EnterFrameEvent.ENTER_FRAME, onEnterFrameHandler);
 		}
 		
@@ -127,7 +187,7 @@ package
 				button.pivotX = 110;
 				button.pivotY = 110;
 				button.x = stageWidth/2 + (i-1)*300;
-				button.y = stageHeight/2;
+				button.y = stageHeight/2-200;
 				button.name = animals[i];
 				addChild(button);
 				TweenMax.from(button, 1, {y:stageHeight+300, delay:i*.2, ease:Elastic.easeOut});
@@ -140,7 +200,7 @@ package
 		private function onButtonTriggered(e:starling.events.Event):void {
 			var button:Button = e.target as Button;
 			trace(button.name);
-			
+			oldmacArmature.animation.gotoAndPlay("dance2");
 			if (button.name == 'cow') {
 				removeButtons();
 				showCow();

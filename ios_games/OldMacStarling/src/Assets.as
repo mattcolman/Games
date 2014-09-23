@@ -30,6 +30,9 @@ package
 		// dragon bones
 		[Embed(source="../media/cow_dbones/cow_dbones.png")]
 		public static const cow_bones:Class;
+		
+		[Embed(source="../media/oldmac/oldmac.png")]
+		public static const oldmac:Class;
 				
 		
 	}
