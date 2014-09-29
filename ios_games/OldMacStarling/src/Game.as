@@ -6,6 +6,7 @@ package
     import com.greensock.easing.Elastic;
     import com.greensock.easing.Strong;
     
+    import flash.display.Bitmap;
     import flash.events.Event;
     import flash.media.SoundChannel;
     
@@ -25,6 +26,7 @@ package
     import starling.events.EnterFrameEvent;
     import starling.events.Event;
     import starling.textures.Texture;
+    import starling.textures.TextureAtlas;
     import starling.utils.AssetManager;
 	
 	
@@ -41,17 +43,17 @@ package
         //private var mCurrentScene:Scene;
         //private var _container:Sprite;		
 		
-		[Embed(source="../media/cow_dbones/texture.xml", mimeType="application/octet-stream")]
-		public static const CowTexture:Class;
-		
-		[Embed(source="../media/cow_dbones/skeleton.xml", mimeType="application/octet-stream")]
-		public static const CowSkeleton:Class;
-		
-		[Embed(source="../media/oldmac/texture.xml", mimeType="application/octet-stream")]
-		public static const OldMacTexture:Class;
-		
-		[Embed(source="../media/oldmac/skeleton.xml", mimeType="application/octet-stream")]
-		public static const OldMacSkeleton:Class;
+//		[Embed(source="../media/cow_dbones/texture.xml", mimeType="application/octet-stream")]
+//		public static const CowTexture:Class;
+//		
+//		[Embed(source="../media/cow_dbones/skeleton.xml", mimeType="application/octet-stream")]
+//		public static const CowSkeleton:Class;
+//		
+//		[Embed(source="../media/oldmac/texture.xml", mimeType="application/octet-stream")]
+//		public static const OldMacTexture:Class;
+//		
+//		[Embed(source="../media/oldmac/skeleton.xml", mimeType="application/octet-stream")]
+//		public static const OldMacSkeleton:Class;
         
         private static var sAssets:AssetManager;
         private var allButtons:Array;
@@ -59,6 +61,7 @@ package
 		private var stageHeight:int;
 		private var factory:StarlingFactory;
 		private var oldmacArmature:Armature;
+		private var backgroundImage:Image;
         
         public function Game()
         {
@@ -75,8 +78,8 @@ package
             // 
             // 1) we need it right away, otherwise we have an empty frame
             // 2) the Startup class can decide on the right image, depending on the device.
-            
-            addChild(new Image(background));
+            backgroundImage = new Image(background); 
+            addChild(backgroundImage);
             
 			sAssets.loadQueue(function(ratio:Number):void
 			{								
@@ -87,21 +90,38 @@ package
 //					Starling.juggler.delayCall(function():void {
 //						showButtons();
 //					}, 1);
+					makeBackground();		
 					showOldMac();
 					//showCow();
 				}
 			});  			
         }   
 		
+		private function makeBackground():void
+		{
+			removeChild(backgroundImage);
+			backgroundImage = null;
+			var back:Image = new Image(sAssets.getTexture("background_4_3"));
+			addChild(back);
+		}
+		
 		private function showOldMac():void {
-			factory = new StarlingFactory();						
+			factory = new StarlingFactory();		
 			
-			var skeletonData:SkeletonData = XMLDataParser.parseSkeletonData(XML(new OldMacSkeleton()));
-			factory.addSkeletonData(skeletonData);
+			//trace("hi there", sAssets.getXml("oldmac_skeleton"));			
+			var xml:XML = sAssets.getXml("oldmac_skeleton");
+			var skeletonData:SkeletonData = XMLDataParser.parseSkeletonData(xml);
+			factory.addSkeletonData(skeletonData, "oldmac_skel");
 			
-			var texture:Texture = sAssets.getTexture("oldmac");
-			var textureAtlas:StarlingTextureAtlas = new StarlingTextureAtlas(texture, XML(new OldMacTexture()));
-			factory.addTextureAtlas(textureAtlas);		
+			var texture:Texture = sAssets.getTexture("oldmac");			
+			var textureAtlas:TextureAtlas = sAssets.getTextureAtlas("oldmac");
+			
+			//var textureAtlas2:StarlingTextureAtlas = new StarlingTextureAtlas(
+			//	texture,
+			//	XML(sAssets.getXml("oldmac"))	
+			//)				
+			
+			factory.addTextureAtlas(textureAtlas, "oldmac_skel");
 			
 			oldmacArmature = factory.buildArmature("oldmac_main");						
 			oldmacArmature.addEventListener(AnimationEvent.COMPLETE, onComplete);
@@ -128,49 +148,49 @@ package
 			}
 		}
 		
-		private function showCow():void {
-			
-			var music:SoundChannel = sAssets.playSound("old_mac_cows");
-			
-			factory = new StarlingFactory();						
-			
-			var skeletonData:SkeletonData = XMLDataParser.parseSkeletonData(XML(new CowSkeleton()));
-			factory.addSkeletonData(skeletonData);
-			
-			var texture:Texture = sAssets.getTexture("cow_bones");
-			var textureAtlas:StarlingTextureAtlas = new StarlingTextureAtlas(texture, XML(new CowTexture()));
-			factory.addTextureAtlas(textureAtlas);		
-			
-			//var eyesArmature:Armature = factory.buildArmature("eyes_blue");
-			//var eyes:Sprite = eyesArmature.display as Sprite;
-			//eyes.x = stageWidth/2;			
-			//eyes.y = 300;			
-			//addChild(eyes);
-			
-			var armature:Armature = factory.buildArmature("cow_main");			
-			var cow:Sprite = armature.display as Sprite;
-			cow.x = stageWidth/2+300;
-			cow.y = stageHeight-100;
-			cow.scaleX = cow.scaleY = .6
-						
-			cow.scaleY = 2;
-			var tl:TimelineMax = new TimelineMax();			
-			tl.append(TweenLite.from(cow, .4, {y:-320, ease:Strong.easeIn}))
-			tl.append(TweenLite.to(cow, 1, {scaleY:.6, ease:Elastic.easeOut}))
-				
-			addChild(cow);
-			
-			//var _bone:Bone = armature.getBone("eyes_new"); 
-			//_bone.display.dispose();
-			//_bone.display = eyes;
-			//eyesArmature.animation.gotoAndPlay("blink");
-			
-			WorldClock.clock.add(armature);
-			//WorldClock.clock.add(eyesArmature);
-			armature.animation.gotoAndPlay("walk");			
-			//eyesArmature.animation.gotoAndPlay("blink");
-			addEventListener(EnterFrameEvent.ENTER_FRAME, onEnterFrameHandler);
-		}
+//		private function showCow():void {
+//			
+//			var music:SoundChannel = sAssets.playSound("old_mac_cows");
+//			
+//			factory = new StarlingFactory();						
+//			
+//			var skeletonData:SkeletonData = XMLDataParser.parseSkeletonData(XML(new CowSkeleton()));
+//			factory.addSkeletonData(skeletonData);
+//			
+//			var texture:Texture = sAssets.getTexture("cow_bones");
+//			var textureAtlas:StarlingTextureAtlas = new StarlingTextureAtlas(texture, XML(new CowTexture()));
+//			factory.addTextureAtlas(textureAtlas);		
+//			
+//			//var eyesArmature:Armature = factory.buildArmature("eyes_blue");
+//			//var eyes:Sprite = eyesArmature.display as Sprite;
+//			//eyes.x = stageWidth/2;			
+//			//eyes.y = 300;			
+//			//addChild(eyes);
+//			
+//			var armature:Armature = factory.buildArmature("cow_main");			
+//			var cow:Sprite = armature.display as Sprite;
+//			cow.x = stageWidth/2+300;
+//			cow.y = stageHeight-100;
+//			cow.scaleX = cow.scaleY = .6
+//						
+//			cow.scaleY = 2;
+//			var tl:TimelineMax = new TimelineMax();			
+//			tl.append(TweenLite.from(cow, .4, {y:-320, ease:Strong.easeIn}))
+//			tl.append(TweenLite.to(cow, 1, {scaleY:.6, ease:Elastic.easeOut}))
+//				
+//			addChild(cow);
+//			
+//			//var _bone:Bone = armature.getBone("eyes_new"); 
+//			//_bone.display.dispose();
+//			//_bone.display = eyes;
+//			//eyesArmature.animation.gotoAndPlay("blink");
+//			
+//			WorldClock.clock.add(armature);
+//			//WorldClock.clock.add(eyesArmature);
+//			armature.animation.gotoAndPlay("walk");			
+//			//eyesArmature.animation.gotoAndPlay("blink");
+//			addEventListener(EnterFrameEvent.ENTER_FRAME, onEnterFrameHandler);
+//		}
 		
 		private function onEnterFrameHandler(e:EnterFrameEvent):void
 		{
@@ -203,7 +223,7 @@ package
 			oldmacArmature.animation.gotoAndPlay("dance2");
 			if (button.name == 'cow') {
 				removeButtons();
-				showCow();
+				//showCow();
 			}
 		}
 		

@@ -18,6 +18,7 @@ package
 	import starling.utils.AssetManager;
 	import starling.utils.RectangleUtil;
 	import starling.utils.ScaleMode;
+	import starling.utils.formatString;
 	
 	
 	[SWF(frameRate="60", width="1024", height="768", backgroundColor="0x333333")]
@@ -28,11 +29,8 @@ package
 		private var myStarling:Starling;
 		
 		// Startup image for HD screens
-		[Embed(source="../media/images/loading.png")]
+		[Embed(source="/startup.png")]
 		private static var LoadingImage:Class;
-		
-		[Embed(source="../media/images/background_4_3.png")]
-		private static var Background:Class;
 		
 		private var mStarling:Starling;
 		
@@ -66,12 +64,12 @@ package
 			var assets:AssetManager = new AssetManager(scaleFactor);
 			
 			assets.verbose = Capabilities.isDebugger;
-			//assets.enqueue(
-			//	appDir.resolvePath("audio"),
-			//	appDir.resolvePath(formatString("fonts/{0}x", scaleFactor)),
-			//	appDir.resolvePath(formatString("textures/{0}x", scaleFactor))
-			//);
-			assets.enqueue(Assets);
+			assets.enqueue(
+				appDir.resolvePath("audio"),				
+				appDir.resolvePath(formatString("fonts/{0}x", scaleFactor)),
+				appDir.resolvePath(formatString("textures/{0}x", scaleFactor))
+			);
+			//assets.enqueue(Assets);
 			
 			// While Stage3D is initializing, the screen will be blank. To avoid any flickering, 
 			// we display a startup image now and remove it below, when Starling is ready to go.
@@ -85,10 +83,9 @@ package
 			// files will vanish from the application package, and those are picked up by the OS!
 			
 			
-			var loadingClass:Class = scaleFactor == 1 ? LoadingImage : LoadingImage;
-			var backgroundClass:Class = scaleFactor == 1 ? Background : Background;
+			var loadingClass:Class = scaleFactor == 1 ? LoadingImage : LoadingImage;			
 			var background:Bitmap = new loadingClass();
-			Background = null; // no longer needed!
+			LoadingImage = null; // no longer needed!
 			
 			background.x = viewPort.x;
 			background.y = viewPort.y;
@@ -113,7 +110,7 @@ package
 				background = null;
 								
 				var game:Game = mStarling.root as Game;				
-				var bgTexture:Texture = Texture.fromEmbeddedAsset(backgroundClass,
+				var bgTexture:Texture = Texture.fromEmbeddedAsset(loadingClass,
 					false, false, scaleFactor); 
 				game.start(bgTexture, assets);	
 				
