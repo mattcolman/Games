@@ -33,28 +33,7 @@ package
        
 
     public class Game extends Sprite
-    {
-        // Embed the Ubuntu Font. Beware: the 'embedAsCFF'-part IS REQUIRED!!!
-        //[Embed(source="../../demo/assets/fonts/Ubuntu-R.ttf", embedAsCFF="false", fontFamily="Ubuntu")]
-        //private static const UbuntuRegular:Class;
-        
-        //private var mLoadingProgress:ProgressBar;
-        //private var mMainMenu:MainMenu;
-        //private var mCurrentScene:Scene;
-        //private var _container:Sprite;		
-		
-//		[Embed(source="../media/cow_dbones/texture.xml", mimeType="application/octet-stream")]
-//		public static const CowTexture:Class;
-//		
-//		[Embed(source="../media/cow_dbones/skeleton.xml", mimeType="application/octet-stream")]
-//		public static const CowSkeleton:Class;
-//		
-//		[Embed(source="../media/oldmac/texture.xml", mimeType="application/octet-stream")]
-//		public static const OldMacTexture:Class;
-//		
-//		[Embed(source="../media/oldmac/skeleton.xml", mimeType="application/octet-stream")]
-//		public static const OldMacSkeleton:Class;
-        
+    {           
         private static var sAssets:AssetManager;
         private var allButtons:Array;
         private var stageWidth:int;
@@ -62,6 +41,11 @@ package
 		private var factory:StarlingFactory;
 		private var oldmacArmature:Armature;
 		private var backgroundImage:Image;
+		private static const AnimalData:Object = {
+			cow: {x: 290, y: 470, width:160},
+			chicken: {x: 835, y: 350, width:88},
+			pig: {x: 750, y: 720, width:210}
+		}
         
         public function Game()
         {
@@ -92,7 +76,8 @@ package
 //					}, 1);
 					makeBackground();		
 					showOldMac();
-					//showCow();
+					firstLine();
+					//showAnimal('cow');
 				}
 			});  			
         }   
@@ -101,25 +86,19 @@ package
 		{
 			removeChild(backgroundImage);
 			backgroundImage = null;
-			var back:Image = new Image(sAssets.getTexture("background_4_3"));
+			var back:Image = new Image(sAssets.getTexture("background43"));
 			addChild(back);
 		}
 		
 		private function showOldMac():void {
 			factory = new StarlingFactory();		
-			
-			//trace("hi there", sAssets.getXml("oldmac_skeleton"));			
+						
 			var xml:XML = sAssets.getXml("oldmac_skeleton");
 			var skeletonData:SkeletonData = XMLDataParser.parseSkeletonData(xml);
 			factory.addSkeletonData(skeletonData, "oldmac_skel");
 			
 			var texture:Texture = sAssets.getTexture("oldmac");			
 			var textureAtlas:TextureAtlas = sAssets.getTextureAtlas("oldmac");
-			
-			//var textureAtlas2:StarlingTextureAtlas = new StarlingTextureAtlas(
-			//	texture,
-			//	XML(sAssets.getXml("oldmac"))	
-			//)				
 			
 			factory.addTextureAtlas(textureAtlas, "oldmac_skel");
 			
@@ -134,11 +113,18 @@ package
 			addChild(oldmac);			
 			
 			WorldClock.clock.add(oldmacArmature);			
-			oldmacArmature.animation.gotoAndPlay("dance1");			
-			
+						
 			addEventListener(EnterFrameEvent.ENTER_FRAME, onEnterFrameHandler);
-			
-			var music:SoundChannel = sAssets.playSound("old_mac_first_line");		
+		}
+		
+		private function firstLine():void {
+			oldmacArmature.animation.gotoAndPlay("dance1");
+			var music:SoundChannel = sAssets.playSound("old_mac_first_line");
+		}
+		
+		private function onEnterFrameHandler():void
+		{
+			WorldClock.clock.advanceTime(-1);			
 		}
 		
 		private function onComplete(e:AnimationEvent):void {
@@ -148,55 +134,32 @@ package
 			}
 		}
 		
-//		private function showCow():void {
-//			
-//			var music:SoundChannel = sAssets.playSound("old_mac_cows");
-//			
-//			factory = new StarlingFactory();						
-//			
-//			var skeletonData:SkeletonData = XMLDataParser.parseSkeletonData(XML(new CowSkeleton()));
-//			factory.addSkeletonData(skeletonData);
-//			
-//			var texture:Texture = sAssets.getTexture("cow_bones");
-//			var textureAtlas:StarlingTextureAtlas = new StarlingTextureAtlas(texture, XML(new CowTexture()));
-//			factory.addTextureAtlas(textureAtlas);		
-//			
-//			//var eyesArmature:Armature = factory.buildArmature("eyes_blue");
-//			//var eyes:Sprite = eyesArmature.display as Sprite;
-//			//eyes.x = stageWidth/2;			
-//			//eyes.y = 300;			
-//			//addChild(eyes);
-//			
-//			var armature:Armature = factory.buildArmature("cow_main");			
-//			var cow:Sprite = armature.display as Sprite;
-//			cow.x = stageWidth/2+300;
-//			cow.y = stageHeight-100;
-//			cow.scaleX = cow.scaleY = .6
-//						
-//			cow.scaleY = 2;
-//			var tl:TimelineMax = new TimelineMax();			
-//			tl.append(TweenLite.from(cow, .4, {y:-320, ease:Strong.easeIn}))
-//			tl.append(TweenLite.to(cow, 1, {scaleY:.6, ease:Elastic.easeOut}))
-//				
-//			addChild(cow);
-//			
-//			//var _bone:Bone = armature.getBone("eyes_new"); 
-//			//_bone.display.dispose();
-//			//_bone.display = eyes;
-//			//eyesArmature.animation.gotoAndPlay("blink");
-//			
-//			WorldClock.clock.add(armature);
-//			//WorldClock.clock.add(eyesArmature);
-//			armature.animation.gotoAndPlay("walk");			
-//			//eyesArmature.animation.gotoAndPlay("blink");
-//			addEventListener(EnterFrameEvent.ENTER_FRAME, onEnterFrameHandler);
-//		}
-		
-		private function onEnterFrameHandler(e:EnterFrameEvent):void
-		{
-			WorldClock.clock.advanceTime(-1);
-		}	
+		private function showAnimal(type):void {
 			
+			var music:SoundChannel = sAssets.playSound("song_"+type);
+			music.addEventListener(flash.events.Event.SOUND_COMPLETE, soundComplete);
+			var d:Object = AnimalData[type];
+			var animal:Image = new Image(sAssets.getTexture(type));
+			animal.pivotX = animal.width/2
+			animal.pivotY = animal.height			
+			animal.scaleX = d.width/animal.width
+			animal.x = d.x;
+			animal.y = d.y;
+			
+			animal.scaleY = animal.scaleX*2;
+			var tl:TimelineMax = new TimelineMax();			
+			tl.append(TweenLite.from(animal, .4, {y:-100, ease:Strong.easeIn}))
+			tl.append(TweenLite.to(animal, 1, {scaleY:animal.scaleX, ease:Elastic.easeOut}))
+				
+			addChild(animal);
+								
+		}		
+		
+		protected function soundComplete(event:flash.events.Event):void
+		{
+			event.target.removeEventListener(flash.events.Event.SOUND_COMPLETE, soundComplete);
+			firstLine();
+		}
 		
 		private function showButtons():void {
 			var animals:Array = ["chicken", "cow", "pig"]
@@ -220,11 +183,9 @@ package
 		private function onButtonTriggered(e:starling.events.Event):void {
 			var button:Button = e.target as Button;
 			trace(button.name);
-			oldmacArmature.animation.gotoAndPlay("dance2");
-			if (button.name == 'cow') {
-				removeButtons();
-				//showCow();
-			}
+			oldmacArmature.animation.gotoAndPlay("dance2");			
+			removeButtons();
+			showAnimal(button.name);			
 		}
 		
 		private function removeButtons():void
