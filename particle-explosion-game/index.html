@@ -1,0 +1,365 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🎆 Awesome Particle Explosion Game 🎆</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background: linear-gradient(45deg, #0a0a0a, #1a1a2e, #16213e);
+            overflow: hidden;
+            font-family: 'Arial', sans-serif;
+            cursor: crosshair;
+        }
+        
+        canvas {
+            display: block;
+            background: radial-gradient(circle at center, rgba(0,0,0,0.1), rgba(0,0,0,0.8));
+        }
+        
+        .ui {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            color: #fff;
+            z-index: 100;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.8);
+        }
+        
+        .score {
+            font-size: 24px;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+        
+        .instructions {
+            font-size: 14px;
+            opacity: 0.8;
+            max-width: 300px;
+        }
+        
+        .controls {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            color: #fff;
+            font-size: 12px;
+            opacity: 0.7;
+        }
+        
+        .title {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: #fff;
+            font-size: 48px;
+            font-weight: bold;
+            text-align: center;
+            text-shadow: 3px 3px 6px rgba(0,0,0,0.8);
+            opacity: 0;
+            animation: fadeInOut 4s ease-in-out;
+            pointer-events: none;
+        }
+        
+        @keyframes fadeInOut {
+            0%, 100% { opacity: 0; }
+            50% { opacity: 1; }
+        }
+    </style>
+</head>
+<body>
+    <canvas id="canvas"></canvas>
+    
+    <div class="ui">
+        <div class="score">Explosions: <span id="explosionCount">0</span></div>
+        <div class="instructions">
+            Click anywhere to create awesome particle explosions! 🎆<br>
+            Hold and drag for continuous fireworks! ✨
+        </div>
+    </div>
+    
+    <div class="controls">
+        Press SPACE for random explosions | Press R to reset | Press F for fullscreen
+    </div>
+    
+    <div class="title" id="title">🎆 AWESOME! 🎆</div>
+
+    <script>
+        class Particle {
+            constructor(x, y, color) {
+                this.x = x;
+                this.y = y;
+                this.vx = (Math.random() - 0.5) * 20;
+                this.vy = (Math.random() - 0.5) * 20;
+                this.life = 1.0;
+                this.decay = Math.random() * 0.02 + 0.01;
+                this.size = Math.random() * 4 + 2;
+                this.color = color;
+                this.gravity = 0.1;
+                this.bounce = 0.7;
+                this.trail = [];
+                this.maxTrailLength = 8;
+            }
+            
+            update(canvas) {
+                // Store trail positions
+                this.trail.push({x: this.x, y: this.y, life: this.life});
+                if (this.trail.length > this.maxTrailLength) {
+                    this.trail.shift();
+                }
+                
+                // Physics
+                this.vy += this.gravity;
+                this.x += this.vx;
+                this.y += this.vy;
+                
+                // Bounce off edges
+                if (this.x <= 0 || this.x >= canvas.width) {
+                    this.vx *= -this.bounce;
+                    this.x = Math.max(0, Math.min(canvas.width, this.x));
+                }
+                if (this.y >= canvas.height) {
+                    this.vy *= -this.bounce;
+                    this.y = canvas.height;
+                    this.vx *= 0.9; // Friction
+                }
+                
+                // Decay
+                this.life -= this.decay;
+                this.size *= 0.99;
+            }
+            
+            draw(ctx) {
+                // Draw trail
+                for (let i = 0; i < this.trail.length; i++) {
+                    const point = this.trail[i];
+                    const alpha = (point.life * (i / this.trail.length)) * 0.5;
+                    const size = this.size * (i / this.trail.length) * 0.5;
+                    
+                    ctx.save();
+                    ctx.globalAlpha = alpha;
+                    ctx.fillStyle = this.color;
+                    ctx.beginPath();
+                    ctx.arc(point.x, point.y, size, 0, Math.PI * 2);
+                    ctx.fill();
+                    ctx.restore();
+                }
+                
+                // Draw main particle
+                ctx.save();
+                ctx.globalAlpha = this.life;
+                
+                // Glow effect
+                const gradient = ctx.createRadialGradient(this.x, this.y, 0, this.x, this.y, this.size * 3);
+                gradient.addColorStop(0, this.color);
+                gradient.addColorStop(1, 'transparent');
+                
+                ctx.fillStyle = gradient;
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.size * 3, 0, Math.PI * 2);
+                ctx.fill();
+                
+                // Core particle
+                ctx.fillStyle = this.color;
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                ctx.fill();
+                
+                ctx.restore();
+            }
+            
+            isDead() {
+                return this.life <= 0 || this.size <= 0.1;
+            }
+        }
+        
+        class ParticleSystem {
+            constructor(canvas) {
+                this.canvas = canvas;
+                this.ctx = canvas.getContext('2d');
+                this.particles = [];
+                this.explosionCount = 0;
+                this.colors = [
+                    '#ff6b6b', '#4ecdc4', '#45b7d1', '#96ceb4', '#ffeaa7',
+                    '#dda0dd', '#98d8c8', '#f7dc6f', '#bb8fce', '#85c1e9',
+                    '#f8c471', '#82e0aa', '#f1948a', '#85c1e9', '#d7bde2'
+                ];
+                
+                this.setupCanvas();
+                this.setupEventListeners();
+                this.animate();
+            }
+            
+            setupCanvas() {
+                this.canvas.width = window.innerWidth;
+                this.canvas.height = window.innerHeight;
+            }
+            
+            setupEventListeners() {
+                let isMouseDown = false;
+                
+                this.canvas.addEventListener('click', (e) => {
+                    this.createExplosion(e.clientX, e.clientY);
+                });
+                
+                this.canvas.addEventListener('mousedown', (e) => {
+                    isMouseDown = true;
+                    this.createExplosion(e.clientX, e.clientY);
+                });
+                
+                this.canvas.addEventListener('mouseup', () => {
+                    isMouseDown = false;
+                });
+                
+                this.canvas.addEventListener('mousemove', (e) => {
+                    if (isMouseDown) {
+                        this.createExplosion(e.clientX, e.clientY, 0.3);
+                    }
+                });
+                
+                // Touch events for mobile
+                this.canvas.addEventListener('touchstart', (e) => {
+                    e.preventDefault();
+                    const touch = e.touches[0];
+                    this.createExplosion(touch.clientX, touch.clientY);
+                });
+                
+                this.canvas.addEventListener('touchmove', (e) => {
+                    e.preventDefault();
+                    const touch = e.touches[0];
+                    this.createExplosion(touch.clientX, touch.clientY, 0.3);
+                });
+                
+                // Keyboard controls
+                document.addEventListener('keydown', (e) => {
+                    switch(e.code) {
+                        case 'Space':
+                            e.preventDefault();
+                            this.randomExplosion();
+                            break;
+                        case 'KeyR':
+                            this.reset();
+                            break;
+                        case 'KeyF':
+                            this.toggleFullscreen();
+                            break;
+                    }
+                });
+                
+                // Resize handler
+                window.addEventListener('resize', () => {
+                    this.setupCanvas();
+                });
+            }
+            
+            createExplosion(x, y, intensity = 1.0) {
+                const particleCount = Math.floor(30 * intensity) + 10;
+                const baseColor = this.colors[Math.floor(Math.random() * this.colors.length)];
+                
+                for (let i = 0; i < particleCount; i++) {
+                    // Create color variations
+                    const colorVariation = this.createColorVariation(baseColor);
+                    const particle = new Particle(x, y, colorVariation);
+                    
+                    // Add some randomness to initial velocity
+                    const angle = (Math.PI * 2 * i) / particleCount + Math.random() * 0.5;
+                    const speed = Math.random() * 15 + 5;
+                    particle.vx = Math.cos(angle) * speed * intensity;
+                    particle.vy = Math.sin(angle) * speed * intensity;
+                    
+                    this.particles.push(particle);
+                }
+                
+                this.explosionCount++;
+                document.getElementById('explosionCount').textContent = this.explosionCount;
+                
+                // Show title animation occasionally
+                if (this.explosionCount % 10 === 0) {
+                    this.showTitle();
+                }
+            }
+            
+            createColorVariation(baseColor) {
+                // Create slight variations of the base color
+                const variations = [
+                    baseColor,
+                    this.adjustBrightness(baseColor, 20),
+                    this.adjustBrightness(baseColor, -20),
+                    this.adjustSaturation(baseColor, 30),
+                    this.adjustSaturation(baseColor, -30)
+                ];
+                return variations[Math.floor(Math.random() * variations.length)];
+            }
+            
+            adjustBrightness(color, amount) {
+                const hex = color.replace('#', '');
+                const r = Math.max(0, Math.min(255, parseInt(hex.substr(0, 2), 16) + amount));
+                const g = Math.max(0, Math.min(255, parseInt(hex.substr(2, 2), 16) + amount));
+                const b = Math.max(0, Math.min(255, parseInt(hex.substr(4, 2), 16) + amount));
+                return `#${r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${b.toString(16).padStart(2, '0')}`;
+            }
+            
+            adjustSaturation(color, amount) {
+                // Simple saturation adjustment (this is a simplified version)
+                return color; // For now, just return the original color
+            }
+            
+            randomExplosion() {
+                const x = Math.random() * this.canvas.width;
+                const y = Math.random() * this.canvas.height;
+                this.createExplosion(x, y, Math.random() * 0.8 + 0.5);
+            }
+            
+            showTitle() {
+                const title = document.getElementById('title');
+                title.style.animation = 'none';
+                title.offsetHeight; // Trigger reflow
+                title.style.animation = 'fadeInOut 4s ease-in-out';
+            }
+            
+            reset() {
+                this.particles = [];
+                this.explosionCount = 0;
+                document.getElementById('explosionCount').textContent = '0';
+            }
+            
+            toggleFullscreen() {
+                if (!document.fullscreenElement) {
+                    document.documentElement.requestFullscreen();
+                } else {
+                    document.exitFullscreen();
+                }
+            }
+            
+            animate() {
+                // Clear canvas with fade effect
+                this.ctx.fillStyle = 'rgba(0, 0, 0, 0.05)';
+                this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+                
+                // Update and draw particles
+                for (let i = this.particles.length - 1; i >= 0; i--) {
+                    const particle = this.particles[i];
+                    particle.update(this.canvas);
+                    particle.draw(this.ctx);
+                    
+                    if (particle.isDead()) {
+                        this.particles.splice(i, 1);
+                    }
+                }
+                
+                requestAnimationFrame(() => this.animate());
+            }
+        }
+        
+        // Initialize the game
+        window.addEventListener('load', () => {
+            const canvas = document.getElementById('canvas');
+            new ParticleSystem(canvas);
+        });
+    </script>
+</body>
+</html>
+
