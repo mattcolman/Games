@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🎨 ASCII Art Generator Game</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Courier New', monospace;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+            color: white;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .header h1 {
+            font-size: 3em;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            font-size: 1.2em;
+            opacity: 0.9;
+        }
+
+        .game-container {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+            max-width: 1000px;
+            width: 100%;
+        }
+
+        .controls {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            margin-bottom: 30px;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .input-group {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        .input-group label {
+            font-weight: bold;
+            font-size: 0.9em;
+        }
+
+        input, select, button {
+            padding: 10px 15px;
+            border: none;
+            border-radius: 10px;
+            font-family: inherit;
+            font-size: 1em;
+        }
+
+        input, select {
+            background: rgba(255, 255, 255, 0.9);
+            color: #333;
+        }
+
+        button {
+            background: linear-gradient(45deg, #ff6b6b, #ee5a24);
+            color: white;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0,0,0,0.3);
+        }
+
+        .ascii-output {
+            background: #1a1a1a;
+            color: #00ff00;
+            padding: 20px;
+            border-radius: 15px;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            line-height: 1;
+            white-space: pre;
+            overflow-x: auto;
+            min-height: 200px;
+            border: 2px solid #00ff00;
+            box-shadow: 0 0 20px rgba(0, 255, 0, 0.3);
+            margin-bottom: 20px;
+        }
+
+        .game-stats {
+            display: flex;
+            justify-content: space-around;
+            background: rgba(0, 0, 0, 0.3);
+            padding: 15px;
+            border-radius: 15px;
+            margin-bottom: 20px;
+        }
+
+        .stat {
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 2em;
+            font-weight: bold;
+            color: #ffd700;
+        }
+
+        .achievements {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            justify-content: center;
+        }
+
+        .achievement {
+            background: rgba(255, 215, 0, 0.2);
+            border: 2px solid #ffd700;
+            padding: 5px 10px;
+            border-radius: 20px;
+            font-size: 0.8em;
+            opacity: 0.5;
+            transition: all 0.3s ease;
+        }
+
+        .achievement.unlocked {
+            opacity: 1;
+            background: rgba(255, 215, 0, 0.3);
+            box-shadow: 0 0 10px rgba(255, 215, 0, 0.5);
+        }
+
+        .color-picker {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            justify-content: center;
+            margin-top: 15px;
+        }
+
+        .color-option {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            cursor: pointer;
+            border: 3px solid transparent;
+            transition: all 0.3s ease;
+        }
+
+        .color-option.selected {
+            border-color: white;
+            transform: scale(1.2);
+        }
+
+        @media (max-width: 768px) {
+            .header h1 {
+                font-size: 2em;
+            }
+            
+            .controls {
+                flex-direction: column;
+            }
+            
+            .ascii-output {
+                font-size: 8px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🎨 ASCII Art Generator Game</h1>
+        <p>Create amazing ASCII art and unlock achievements!</p>
+    </div>
+
+    <div class="game-container">
+        <div class="game-stats">
+            <div class="stat">
+                <div class="stat-value" id="artCount">0</div>
+                <div>Art Created</div>
+            </div>
+            <div class="stat">
+                <div class="stat-value" id="score">0</div>
+                <div>Score</div>
+            </div>
+            <div class="stat">
+                <div class="stat-value" id="level">1</div>
+                <div>Level</div>
+            </div>
+        </div>
+
+        <div class="controls">
+            <div class="input-group">
+                <label for="textInput">Enter Text:</label>
+                <input type="text" id="textInput" placeholder="Type something cool!" maxlength="20">
+            </div>
+            
+            <div class="input-group">
+                <label for="styleSelect">ASCII Style:</label>
+                <select id="styleSelect">
+                    <option value="block">Block</option>
+                    <option value="shadow">Shadow</option>
+                    <option value="double">Double</option>
+                    <option value="bubble">Bubble</option>
+                    <option value="digital">Digital</option>
+                </select>
+            </div>
+            
+            <button onclick="generateArt()">🎨 Generate Art</button>
+            <button onclick="randomizeAll()">🎲 Random</button>
+            <button onclick="saveArt()">💾 Save</button>
+        </div>
+
+        <div class="color-picker">
+            <div class="color-option selected" style="background: #00ff00" data-color="#00ff00"></div>
+            <div class="color-option" style="background: #ff0080" data-color="#ff0080"></div>
+            <div class="color-option" style="background: #00ffff" data-color="#00ffff"></div>
+            <div class="color-option" style="background: #ffff00" data-color="#ffff00"></div>
+            <div class="color-option" style="background: #ff8000" data-color="#ff8000"></div>
+            <div class="color-option" style="background: #8000ff" data-color="#8000ff"></div>
+        </div>
+
+        <div class="ascii-output" id="asciiOutput">
+Welcome to ASCII Art Generator Game! 🎮
+
+Enter some text above and click "Generate Art" to create your first masterpiece!
+
+Try different styles and colors to unlock achievements.
+        </div>
+
+        <div class="achievements">
+            <div class="achievement" id="first-art">🎨 First Artist</div>
+            <div class="achievement" id="speed-demon">⚡ Speed Demon</div>
+            <div class="achievement" id="rainbow-master">🌈 Rainbow Master</div>
+            <div class="achievement" id="word-wizard">📝 Word Wizard</div>
+            <div class="achievement" id="style-explorer">🎭 Style Explorer</div>
+            <div class="achievement" id="art-collector">🏆 Art Collector</div>
+        </div>
+    </div>
+
+    <script src="game.js"></script>
+</body>
+</html>
+
